@@ -1,6 +1,6 @@
 # Documentación de `useMagicSearchParams` 🪄
 
-## Índice
+## Índice 📑
 1. [Introducción General](#introducción-general)  
    1.1 [Propósito del Hook](#propósito-del-hook)  
    1.2 [Contexto de Implementación](#contexto-de-implementación)  
@@ -17,15 +17,15 @@
    4.3 [clearParams](#clearparams)  
 5. [Características Clave y Beneficios](#características-clave-y-beneficios)  
 6. [Ejemplo de Uso & Explicaciones](#ejemplo-de-uso--explicaciones)  
-7. [Buenas Prácticas y Consideraciones](#buenas-prácticas-y-consideraciones)  
-8. [Conclusión](#conclusión)  
+7. [Buenas Prácticas y Consideraciones](#buenas-prácticas-y-consideraciones) ✅
+8. [Conclusión](#conclusión) 🎯
 
 ---
 
 
 # Introducción General
 
-## Propósito del Hook
+## Propósito del Hook 🎯
 
 El **hook `useMagicSearchParams`** habilita un manejo **avanzado** y **centralizado** de parámetros en la URL.  
 Permite definir y unificar lógica para filtrar, paginar o realizar cualquier otra operación que dependa de parámetros en la cadena de consulta (ej. `?page=1&page_size=10`).
@@ -125,7 +125,7 @@ export const AfterHookExample = () => {
 ```
 </details>
 
-#### Información Adicional
+#### Información Adicional 📋
 
 1. ***Tipado Estricto***
   * Al definir “mandatory” y “optional” desde un archivo de constantes, TypeScript infiere las claves disponibles en la URL.
@@ -248,7 +248,7 @@ clearParams({ keepMandatoryParams: false })
 ```
 </details>
 
-### Ejemplo de Uso & Explicaciones
+### Ejemplo de Uso & Explicaciones 🖥️💡
 
 En el siguiente ejemplo, se combinan:
 
@@ -302,7 +302,7 @@ export const FilterUsers = (props) => {
 
 ---
 
-## Conclusión 
+## Conclusión 🎉
 
 El hook `useMagicSearchParams` aporta:
 - **Legibilidad y Mantenibilidad** al centralizar la lógica.  
