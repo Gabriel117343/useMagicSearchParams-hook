@@ -155,7 +155,7 @@ export const AfterHookExample = () => {
 3. **DefaultParams**:(parámetros por defecto)
   - Se establecen automáticamente al cargar un componente.
   - Útiles para `filtros por defecto` o configuraciones iniciales.
-  - A diferencia de los parámetros agregados en enlaces ej: `sistema/lista?page=1&page_size=10`, estos se cargan según el componente (página) que se este visitando, asegurando que la página visitada siempre tenga parámetros por defecto, aunque el usuario los elimine, esto asegura que las llamadas a una **API** que útiliza los párametros de la URL no devuelva los datos correctos.
+  - A diferencia de los parámetros agregados en enlaces ej: `sistema/lista?page=1&page_size=10`, estos se cargan según el componente (página) que se este visitando, asegurando que la página visitada siempre tenga parámetros por defecto, aunque el usuario los elimine, esto asegura que las llamadas a una **API** que útiliza los párametros de la URL devuelva los datos correctos.
 4. **ForceParams**:(Parámetros forzados)
   - Fuerzan valores que no se pueden sobrescribir (ej: page_size=10).
   - Garantizan una máxima seguridad, mientras que mejoran la experiencia del usuario (evitar page_size=1000)
