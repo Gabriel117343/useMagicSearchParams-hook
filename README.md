@@ -24,6 +24,7 @@
 
 
 # Introducción General
+<img src="https://github.com/user-attachments/assets/386c77be-732b-40c0-ba6d-f22ce9570313" alt="Captura de pantalla" width="800px" />
 
 ## Propósito del Hook 🎯
 
