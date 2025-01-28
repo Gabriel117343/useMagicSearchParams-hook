@@ -164,7 +164,8 @@ export const useMagicSearchParams = <
     const params = getParams()
     const result = Object.assign({
       ...params,
-      ...newParams
+      ...newParams,
+      ...forceParams // los parámetros forzados siempre se enviarán y mantendrán su valor
     })
     const paramsFiltered: OptionalParamsFiltered = Object.keys(result).reduce((acc, key) => {
       // por defecto no se omiten ningún parametros a menos que se especifique en el objeto keepParams
@@ -218,7 +219,8 @@ export const useMagicSearchParams = <
        // en caso se encuentren parametros en la URL reemplazarán los parámetros mandatorios por defecto
        ...(keepMandatoryParams && {
         ...mandatoryParameters()
-      })
+      }),
+      ...forceParams // los parámetros forzados siempre se enviarán y mantendrán su valor
     })
     setSearchParams(paramsTransformed) 
   }
@@ -230,6 +232,7 @@ export const useMagicSearchParams = <
   type KeepParams = KeepParamsTransformedValuesBoolean
   const updateParams = ({ newParams = {} as NewParams, keepParams = {} as KeepParams } = {}) => {
     // se recibe como parametro un objeto por ej: { filtro: 'nuevoFiltro', categoria: 'nuevaCategoria' }
+
     if (
       Object.keys(newParams).length === 0 &&
       Object.keys(keepParams).length === 0
