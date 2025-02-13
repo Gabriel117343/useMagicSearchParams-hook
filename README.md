@@ -104,18 +104,19 @@ export const AfterHookExample = () => {
     }
     loadUsers()
   }, [searchParams])
-
+  
   // getParams devuelve datos convertidos y tipados con autocompletado
   const { page, page_size, search } = getParams({ convert: true })
 
   const handleNextPage = () => {
-    updateParams({ newParams: { page: (page || 1) + 1 } })
+    const nextPage = { page: (page ?? 1) + 1 }
+    updateParams({ newParams: nextpage }) // por defecto se mantienen los otros parámetros de consulta
   }
 
   return (
     <div>
-     
-      <input defaultValue={search} placeholder='Buscar por...'>
+       {/* Nota: normalmente el input será de tipo "no controlado" debido a que normalmente se utilizar una técnica de "debounce" para demorar la actualización */}
+      <input defaultValue={search} placeholder='Buscar por...' onChange={handleSearchChange} />
       <p>Página actual: {page}</p>
       <p>Tamaño de página: {page_size}</p>
       <p>Búsqueda: {search}</p>
@@ -201,6 +202,9 @@ export const paramsUsers = {
 ### 1. getParams
 Obtiene los parámetros tipados y opcionalmente convertidos desde la URL.  
 Útil para recuperar “page”, “order”, “search”, etc., sin lidiar con valores nulos o tipos incorrectos.
+
+> [!NOTE]
+> Por defecto el hook `useSearchParams` de **react-router-dom** devuelve los parámetros en `string`, haunque los hayamos definido con otro tipo  ej: `number`, esto lo soluciona el metodo `getParams` gracias a que guarda una referencia de su tipo original.
 
 <details>
 <summary>Ejemplo de uso</summary>

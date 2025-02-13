@@ -12,6 +12,8 @@ export default defineConfig({
     extensions: ['.js', '.jsx', '.ts', '.tsx'],
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@hooks': path.resolve(__dirname, './src/hooks'),
+      '@components': path.resolve(__dirname, './src/components'),
     },
   },
   test: {
