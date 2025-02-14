@@ -9,16 +9,18 @@
    2.2 [optional (Opcionales)](#optional-opcionales)  
    2.3 [defaultParams](#defaultparams)  
    2.4 [forceParams](#forceparams)  
-   2.5 [omitParamsByValues](#omitparamsbyvalues)  
+   2.5 [omitParamsByValues](#omitparamsbyvalues) 
+   2.6 [arraySerialization](#arraySerialization) 
 3. [Recomendación de Uso con Archivo de Constantes](#recomendación-de-uso-con-archivo-de-constantes)  
 4. [Funciones Principales](#funciones-principales)  
    4.1 [getParams](#getparams)  
    4.2 [updateParams](#updateparams)  
-   4.3 [clearParams](#clearparams)  
-5. [Características Clave y Beneficios](#características-clave-y-beneficios)  
-6. [Ejemplo de Uso & Explicaciones](#ejemplo-de-uso--explicaciones)  
-7. [Buenas Prácticas y Consideraciones](#buenas-prácticas-y-consideraciones) ✅
-8. [Conclusión](#conclusión) 🎯
+   4.3 [clearParams](#clearparams) 
+5. [Serialización de Arrays en la URL(nuevo)](#serialización-de-arrays-en-la-url)
+8. [Características Clave y Beneficios](#características-clave-y-beneficios)  
+9. [Ejemplo de Uso & Explicaciones](#ejemplo-de-uso--explicaciones)  
+10. [Buenas Prácticas y Consideraciones](#buenas-prácticas-y-consideraciones) ✅
+11. [Conclusión](#conclusión) 🎯
 
 ---
 
@@ -165,7 +167,11 @@ export const AfterHookExample = () => {
   - Lista de valores que, si se detectan, se omiten de la **URL** (ej. 'all', 'default')
   - Simplifica URLS, omitiendo parámetros que no aportan información real
   - Reserva espacio para otros parámetros de consulta por la limitación de los mismos en la url *Dependiendo del Navegador que se utilize.*
-
+6. **arraySerialization**:(Serialización de Arrays)
+  - Permite Serializar arrays en la **URL** con 3 distintos métodos (csv, repeat, brackets)
+  - Posibilidad de actualizarlos a través de 2 metodos, toggle (agregar, eliminar) y pasando un array de valores ej tags: ['nuevo1', 'nuevo2']
+  - Es accesible a través del metodo `getParams` para obtener sus valores de tipo string ej:`tags=uno,dos,tres` o convertido a su tipo original ej: `tags: ['uno', 'dos','tres']`
+  
 ## Recomendación de uso de un Archivo de Constantes📁
 
 * Definir los parámetros obligatorios y opcionales en un único archivo (ej. defaultParamsPage.ts)
@@ -298,6 +304,131 @@ export const FilterUsers = (props) => {
 ***omitParamsByValues*** descarta valores que no aporten datos reales (“all”, “default”).
 ***getParams*** devuelve valores tipados (números, booleanos, strings, etc.).
 ***updateParams*** y ***clearParams*** simplifican los flujos de actualización en la URL.
+
+## Serialización de Arrays en la URL 🚀
+
+El hook `useMagicSearchParams` ahora permite gestionar parámetros de tipo array de forma **avanzada** y **flexible**, enviándolos de forma óptima al backend según el formato requerido. Esto se logra mediante la opción `arraySerialization`, que admite tres técnicas:
+
+### Métodos de Serialización 🔄
+
+- **csv**:  
+  Serializa el array en una única cadena separada por comas.  
+  **Ejemplo:**  
+  `tags=tag1,tag2,tag3`  
+  _Ideal cuando el backend espera un solo string._
+
+- **repeat**:  
+  Envía cada elemento del array como un parámetro separado.  
+  **Ejemplo:**  
+  `tags=tag1&tags=tag2&tags=tag3`  
+  _Perfecto para APIs que manejan múltiples entradas con la misma clave._
+
+- **brackets**:  
+  Utiliza la notación con corchetes en la clave para cada elemento.  
+  **Ejemplo:**  
+  `tags[]=tag1&tags[]=tag2&tags[]=tag3`  
+  _Útil para frameworks que esperan este formato (ej. PHP)._
+
+> [!TIP]
+> Al extraer los valores de `tags` con `getParams({ convert: true })` obtendrás:
+> - **String** si no se especifica conversión: `tags="tag1,tag2,tag3"`
+> - **Array** si se convierte: `tags=['tag1', 'tag2', 'tag3']`  
+> _Esto mejora la consistencia y tipado en tu aplicación._
+
+### Ventajas y Beneficios 🌟
+
+- **Flexibilidad de Envío**:  
+  Elige el método que mejor se adapte a las necesidades del backend.  
+  ✅ _Mayor compatibilidad con distintos sistemas._
+
+- **Normalización Automática**:  
+  Las claves que llegan en formato `tags[]` se normalizan a `tags` para facilitar su manejo.  
+  ✅ _Más fácil iterar y convertir a tipos originales._
+
+- **Control Total de la URL**:  
+  El hook gestiona la reescritura de la URL de forma consistente, reduciendo errores y manteniendo la legibilidad.  
+  🔒 _Mejora la seguridad y el control de los parámetros._
+
+### Ejemplos de Uso en Código 👨‍💻
+
+```jsx
+// filepath: /c:/Users/soliz/OneDrive/Escritorio/naa/useMagicSearchParams-hook/src/App.tsx
+import React from "react";
+import { useMagicSearchParams } from "../src/hooks/useMagicSearchParams";
+import { paramsUsers } from "../src/constants/defaulParamsPage";
+
+export default function App() {
+  const { searchParams, getParams, updateParams, clearParams } = useMagicSearchParams({
+    ...paramsUsers,
+    defaultParams: paramsUsers.mandatory,
+    forceParams: { page_size: 10 },
+    arraySerialization: 'repeat', // Puedes cambiar a 'csv' o 'brackets' según prefieras.
+    omitParamsByValues: ["all", "default"],
+  });
+
+  // Obtener parámetros convertidos (por ejemplo, tags se obtiene como array)
+  const { tags, page } = getParams({ convert: true });
+  console.log({ tags, page });
+
+ const availableTags = ['react', 'node', 'typescript', 'javascript']
+
+  // Ejemplo: Actualizar el array de tags con toggle
+  const handleTagToggle = (newTag: string) => {
+    // si ya existe se elimina, sino se agrega
+    updateParams({ newParams: { tags: newTag } });
+  };
+  // pasar un array de tags
+  const handleTagToggleArray = (newTags: string[]) => {
+    // el hook se encarga de que no existán valores repetidos en el array haciendo 
+    // merge con los anteriores
+    updateParams({ newParams: { tags: [..newTags] } });
+  };
+  return (
+    <div>
+      <div>
+        <h3 className='text-lg font-semibold mb-3'>Selecciona Tags:</h3>
+          {availableTags.map(tag => {
+            const isActive = Array.isArray(tags) && tags.includes(tag)
+            return (
+              <button
+                key={tag}
+                onClick={() => handleTagToggle(tag)}
+                className={`px-4 py-2 rounded-md border ${
+                  isActive ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'
+                }`}
+              >
+                {tag}
+              </button>
+            )
+          })}
+      </div>
+      <p>Tags actuales: {JSON.stringify(tags)}</p>
+      {/* Resto del componente */}
+    </div>
+  );
+}
+```
+
+En este ejemplo, al utilizar la serialización **repeat**, la `URL` resultante se verá así:
+
+**Modo (repeat)**: `?page=1&page_size=10&only_is_active=false&tags=tag1&tags=tag2&tags=tag3`
+**Modo (csv)**: `?page=1&page_size=10&only_is_active=false&tags=tag1,tag2,tag3`
+**Modo (brackets)**: `?page=1&page_size=10&only_is_active=false&tags[]=tag1&tags[]=tag2&tags[]=tag3`
+
+### Esta nueva funcionalidad permite:
+
+- Enviar arrays de forma que se ajusten a las expectativas del backend.
+- Gestionar de forma centralizada la conversión y serialización, reduciendo la complejidad en componentes individuales.
+- Mantener la URL limpia y consistente, independientemente del método de serialización elegido.
+
+### ¿Por Qué Esta Funcionalidad Es Clave? 🎯
+
+- **Enviar arrays al backend de forma adaptable:**
+  Se ajusta a diversos formatos que los servidores pueden esperar.
+- **Reducción de complejidad en componentes:**
+  Centraliza la lógica de serialización, evitando redundancia en el código.
+- **Mejor experiencia para el usuario:**
+  Una URL limpia y consistente facilita la depuración y mejora la usabilidad.
 
 ## Buenas Prácticas y Consideraciones ✅
 

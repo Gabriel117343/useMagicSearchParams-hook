@@ -9,11 +9,35 @@ export default function App() {
    * - forceParams: Fuerza el valor de page_size a 10, evitando que el usuario lo modifique.
    * - omitParamsByValues: Omite valores como 'all' y 'default' de la URL.
    */
+
+
+
+  // const getParams = ({ convert = true } = {}): MergeParams<M, O> => {
+  //   // se extraen todos los parametros de la URL y se convierten en un objeto
+  //   const paramsUrl = Object.fromEntries(searchParams.entries())
+    
+
+  //   console.log({ PARAMS_URL_GET: paramsUrl })
+
+  //   const params = Object.keys(paramsUrl).reduce((acc, key) => {
+  //     if (Object.hasOwn(TOTAL_PARAMS_PAGE, key)) {
+  //       const realKey = arraySerialization === 'brackets' ? key.replace('[]', '') : key
+  //       console.log({realKey})
+  //       acc[realKey] = convert === true
+  //         ? convertOriginalType(paramsUrl[key], key)
+  //         :  getStringUrl(key, paramsUrl)
+  //     }
+  //     return acc
+  //   }, {})
+
+  //   return params as MergeParams<M, O>
+  // }
+
   const { searchParams, getParams, updateParams, clearParams } = useMagicSearchParams({
     ...paramsUsers,
     defaultParams: paramsUsers.mandatory,
     forceParams: { page_size: 10 },
-    arraySerialization: 'brackets', // tags=tag1,tag2,tag3
+    arraySerialization: 'repeat', // tags=tag1,tag2,tag3
 
     omitParamsByValues: ["all", "default"], // cuando se envíe 'all' o 'default' en la URL, se omitirán
   });
@@ -29,6 +53,8 @@ export default function App() {
   const { page, search, order, only_is_active, tags } = getParams({
     convert: true,
   });
+
+  const { tags: tagsWithoutConvert } = getParams({ convert: false })
 
   /**
    * Maneja el cambio en el campo de búsqueda.
@@ -68,8 +94,19 @@ export default function App() {
    */
 
   const handleClear = () => {
-    clearParams({keepMandatoryParams: true});
+    // Los valores de los parámetros mandatorios que fuerón modificados se mantienen, caso contrario se reestablecen a los valores por defecto
+    clearParams({keepMandatoryParams: true });
   };
+
+  const converStringBoolean = (value: string | boolean) => {
+    // Dado que desde la url se obtiene un string, se convierte a booleano (asegurara el cambio caso se haya elegio en getParams convert: false)
+    if (typeof value === 'boolean') return value
+    if (value === 'true') {
+      return true
+    } else if (value === 'false') {
+      return false
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center p-6">
@@ -126,10 +163,10 @@ export default function App() {
               type="checkbox"
               id="only_is_active"
               onChange={() =>
-                updateParams({ newParams: { only_is_active: !only_is_active } })
+                updateParams({ newParams: { only_is_active: !converStringBoolean(only_is_active) } })
               }
-              checked={only_is_active}
-              defaultChecked={only_is_active}
+              checked={converStringBoolean(only_is_active)}
+        
               className="text-blue-500 rounded"
             />
             <span className="text-sm text-gray-700">
@@ -171,12 +208,19 @@ export default function App() {
               <strong>Tamaño de Página:</strong> {10}
             </p>
             <p>
-              <strong>Solo Activos:</strong> {only_is_active ? "Sí" : "No"}
+              <strong>Solo Activos:</strong> {converStringBoolean(only_is_active) ? "Sí" : "No"}
             </p>
             <p>
               <strong>Tags:</strong> 
               {' '}
               {JSON.stringify(tags)}
+            </p>
+            <hr className="mt-2" />
+            <small className="bg-yellow-300 rounded-sm p-0.5">Nota: Asi se deberían de enviarse al backend</small>
+            <p>
+              <strong>Tags sin convertir:</strong>
+              {' '}
+              {JSON.stringify(tagsWithoutConvert)}
             </p>
             <p>
               <strong>Orden:</strong> {order || "Ninguno"}

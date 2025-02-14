@@ -173,4 +173,60 @@ describe('useMagicSearchParams Hook', () => {
     expect(updatedParams.page_size).toBe(10) // still forced
     expect(updatedParams.search).toBe('anotherTest')
   })
+
+  // Sección de pruebas para la serialización de arrays
+  
+  it('Debe agregar y eliminar un tag individual en modo repeat', () => {
+    const { result } = renderHook(
+      () =>
+        useMagicSearchParams({
+          ...paramsUsers,
+          defaultParams: paramsUsers.mandatory,
+          arraySerialization: 'repeat',
+        }),
+      { wrapper: Wrapper }
+    );
+  
+    // Se espera que los tags iniciales sean únicos: ['uno', 'dos', 'tres']
+    const initialParams = result.current.getParams({ convert: true });
+    expect(initialParams.tags).toEqual(['uno', 'dos', 'tres']);
+  
+    // Agrega un tag 'nuevo'
+    act(() => {
+      result.current.updateParams({ newParams: { tags: 'nuevo' } });
+    });
+    let updatedParams = result.current.getParams({ convert: true });
+    expect(updatedParams.tags).toEqual(['uno', 'dos', 'tres', 'nuevo']);
+  
+    // Al volver a enviar el mismo tag 'nuevo', éste se elimina (toggle)
+    act(() => {
+      result.current.updateParams({ newParams: { tags: 'nuevo' } });
+    });
+    updatedParams = result.current.getParams({ convert: true });
+    expect(updatedParams.tags).toEqual(['uno', 'dos', 'tres']);
+  });
+  
+  it('Debe combinar arrays de tags sin duplicados en modo repeat', () => {
+    const { result } = renderHook(
+      () =>
+        useMagicSearchParams({
+          ...paramsUsers,
+          defaultParams: paramsUsers.mandatory,
+          arraySerialization: 'repeat',
+        }),
+      { wrapper: Wrapper }
+    );
+  
+    // Verifica el estado inicial de los tags
+    const initialParams = result.current.getParams({ convert: true });
+    expect(initialParams.tags).toEqual(['uno', 'dos', 'tres']);
+  
+    // Actualiza enviando un array que incluye valores ya existentes y nuevos
+    act(() => {
+      result.current.updateParams({ newParams: { tags: ['react', 'dos', 'nuevo'] } });
+    });
+    const updatedParams = result.current.getParams({ convert: true });
+    // Se espera la unión de ambos arrays sin duplicados
+    expect(updatedParams.tags).toEqual(['uno', 'dos', 'tres', 'react', 'nuevo']);
+  });
 })

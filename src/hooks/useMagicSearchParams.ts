@@ -1,7 +1,6 @@
 import { useSearchParams } from 'react-router-dom'
 import { useMemo, useEffect } from 'react'
 
-
 // HOOK PERSONALIZADO CON TECNICAS AVANZADAS PARA MANEJAR LOS PARÁMETROS DE BÚSQUEDA DE CUALQUIER PAGINACIÓN
 
 type CommonParams = {
@@ -65,6 +64,13 @@ export const useMagicSearchParams = <
     return Array.from(Object.keys(TOTAL_PARAMS_PAGE))
   }, [TOTAL_PARAMS_PAGE])
 
+  // Obtenemos los keys que son arrays según TOTAL_PARAMS_PAGE ya que estos requieren un tratamiento especial en la URL debido al modo de serialización
+  const ARRAY_KEYS = useMemo(() => {
+    return Object.keys(TOTAL_PARAMS_PAGE).filter(
+      (key) => Array.isArray(TOTAL_PARAMS_PAGE[key])
+    );
+  }, [TOTAL_PARAMS_PAGE])
+
   const appendArrayValues = (
     finallyParams: Record<string, unknown>,
     newParams: Record<string, string | string[] | unknown>
@@ -72,13 +78,10 @@ export const useMagicSearchParams = <
     // Clonamos los params finales
     const updatedParams = { ...finallyParams };
   
-    // Obtenemos los keys que son arrays según TOTAL_PARAMS_PAGE
-    const arrayKeys = Object.keys(TOTAL_PARAMS_PAGE).filter(
-      (key) => Array.isArray(TOTAL_PARAMS_PAGE[key])
-    );
-    if (arrayKeys.length === 0) return updatedParams;
+
+    if (ARRAY_KEYS.length === 0) return updatedParams;
   
-    arrayKeys.forEach((key) => {
+    ARRAY_KEYS.forEach((key) => {
       // Usamos los valores actuales directamente desde searchParams (source of truth)
       // Esto evita depender de finallyParams en el cual se han omitido los arrays
       let currentValues = []; 
@@ -94,14 +97,18 @@ export const useMagicSearchParams = <
         case 'repeat': {
           // Para repeat se obtienen todas las ocurrencias de key
           const urlParams = searchParams.getAll(key) as Array<string>
-          currentValues = new URLSearchParams(urlParams.join('')).getAll(key) as Array<string>
+          currentValues = urlParams.length > 0 ? urlParams : []
+          
+          console.log({REPEAT: currentValues})
           break;
         }
         case 'brackets': {
            // Construye URLSearchParams a partir de los parámetros actuales (para garantizar que no se tomen valores serializados previamente)
-            const urlParams = searchParams.getAll(key) as Array<string>
+            const urlParams = searchParams.getAll(`${key}[]`) as Array<string>
+            currentValues = urlParams.length > 0 ? urlParams : []
             console.log({BRACKETS: urlParams})
-            currentValues = new URLSearchParams(urlParams.join('')).getAll(`${key}[]`) as Array<string>
+        
+    
             break;
         }
         default: {
@@ -113,82 +120,81 @@ export const useMagicSearchParams = <
           }
         break; 
       }
-  
-      // Si newParams trae un valor para la key (ya sea string o array), hacemos toggle/merge
 
+      // Actualizamos los valores de los arrays con los nuevos
+    
       if (newParams[key] !== undefined) {
         const incoming = newParams[key];
-        let combined: string[];
+        let combined: string[] = []
         if (typeof incoming === 'string') {
+          // Si es un string, se hace toggle (agregar/eliminar)
+      
           combined = currentValues.includes(incoming)
             ? currentValues.filter((v) => v !== incoming)
             : [...currentValues, incoming];
+          console.log({currentValues})
+            console.log({incoming})
+          console.log({CONBINED_STRING: combined})
         } else if (Array.isArray(incoming)) {
-
+          // si se pasa un array los valores repetidos se fusionan en un solo valor
           combined = Array.from(new Set([...currentValues, ...incoming]));
+          console.log({incoming})
+          console.log({combined})
         } else {
+       
           combined = currentValues;
         }
-  
-        // Serializamos utilizando la función auxiliar y removemos el último "&"
-        const serialized = transformToArraySerialization({
-          serialization: arraySerialization,
-          key,
-          value: combined,
-        }).replace(/&$/, '');
-        // Guardamos el resultado en los params actualizados bajo la key original
-        updatedParams[key] = serialized;
+
+        updatedParams[key] = combined
+
       }
     });
-  
-    // Para todas las claves que no son arrays se actualiza normalmente
-    Object.keys(newParams).forEach((key) => {
-      if (!Array.isArray(TOTAL_PARAMS_PAGE[key])) {
-        updatedParams[key] = newParams[key];
-      }
-    });
-  
-    return updatedParams;
+    console.log({updatedParams})
+    return updatedParams
   };
-  type ParamString = `${string}=${string}&`
-  type ParamsCsv = `${string}=${string},${string},${string}&`
-  type ParamsRepeat = `${string}=${string}&${string}=${string}&${string}=${string}&`
-  type ParamsBrackets = `${string}[]=${string}&`
 
-  const transformToArraySerialization = ({serialization = 'csv', key, value}) => {
-    console.log({VALUE_RECIBIDO: value})
-    switch (serialization) {
-      case 'csv':
-        // Ejemplo CSV: tags=tag1,tag2,tag3
-        return `${value.join(',')}&` as ParamsCsv
-      case 'repeat':
-        // Ejemplo Repeat: tags=tag1&tags=tag2&tags=tag3
-        return value.map(item => `${key}=${item}&`).join('') as ParamsRepeat
-      case 'brackets':
-        // Ejemplo Brackets: tags[]=tag1&tags[]=tag2&tags[]=tag3
-        return value.map(item => `${key}[]=${item}&`).join('') as ParamsBrackets
-      default:
-        return `${value.join(',')}&`;
-    }
-  }
- 
-  const transformParamsToString = (params: Record<string, unknown>) => {
-    
-    return Object.entries(params).reduce((acc, [key, value]) => {
+  const transformParamsToURLSearch = (params: Record<string, unknown>): URLSearchParams => {
+    console.log({PARAMS_RECIBIDOS_TRANSFORM: params})
 
-      let newParam: string = ''
-      if (Array.isArray(TOTAL_PARAMS_PAGE[key]) ) {
-        const arrayValue = value as unknown[] // o, si se sabe que es string[], usar: as string[]
+    const newParam: URLSearchParams = new URLSearchParams()
 
-        newParam = transformToArraySerialization({serialization: arraySerialization, key, value: arrayValue})
-       
+    const paramsKeys = Object.keys(params)
+
+    for (const key of paramsKeys) {
+      if (Array.isArray(TOTAL_PARAMS_PAGE[key])) {
+        const arrayValue = params[key] as unknown[]
+        console.log({arrayValue})
+        switch (arraySerialization) {
+          case 'csv': {
+            const csvValue = arrayValue.join(',')
+            newParam.set(key, csvValue) // set asegura que se reemplace el valor anterior
+            break
+          } case 'repeat': {
+      
+            for (const item of arrayValue) {
+              console.log({item})
+              // append agrega un nuevo valor a la clave, en lugar de reemplazarlo
+              newParam.append(key, item as string)
+   
+            }
+            break
+          } case 'brackets': {
+            for (const item of arrayValue) {
+              newParam.append(`${key}[]`, item as string)
+            }
+            break
+          } default: {
+            // Modo por defecto funciona como csv
+            const csvValue = arrayValue.join(',')
+            newParam.set(key, csvValue)
+          }
+        }
       } else {
-         newParam = `${key}=${value}&` as ParamString
-    
+        newParam.set(key, params[key] as string)
       }
-     
-      return acc.concat(newParam)
-    }, '').slice(0, -1)
+    }
+    console.log({FINAL: newParam.toString()})
+    return newParam
   }
   const hasForcedParamsValues = ({ paramsForced, compareParams }) => {
 
@@ -209,10 +215,12 @@ export const useMagicSearchParams = <
 
     function handleStartingParams() {
 
-      const defaultParamsString  = transformParamsToString(defaultParams)
+      const defaultParamsString  = transformParamsToURLSearch(defaultParams).toString()
       const paramsUrl = getParams()
-      const paramsUrlString = transformParamsToString(paramsUrl)
-      const forceParamsString = transformParamsToString(forceParams)
+      const paramsUrlString = transformParamsToURLSearch(paramsUrl).toString()
+      const forceParamsString = transformParamsToURLSearch(forceParams).toString()
+
+      console.log({defaultParamsString})
 
       const isForcedParams: boolean = hasForcedParamsValues({ paramsForced: forceParams, compareParams: paramsUrl })
 
@@ -252,25 +260,88 @@ export const useMagicSearchParams = <
     } else if (typeof TOTAL_PARAMS_PAGE[key] === 'boolean') {
       return value === 'true'
     } else if (Array.isArray(TOTAL_PARAMS_PAGE[key])) { // en caso se pase un array como parámetro, esta tecnica se representa como un string separado por comas ej: /?parametro=valor1,valor2,valor3
-      return searchParams.getAll(key)
+ 
+      if (arraySerialization === 'csv') {
+
+        return searchParams.getAll(key).join('').split(',')
+      } else if (arraySerialization === 'repeat') {
+    
+        console.log({SEARCH_PARAMS: searchParams.getAll(key)})
+        return searchParams.getAll(key)
+      } else if (arraySerialization === 'brackets') {
+   
+        return 'sdafkjñasdflk'
+      }
+     
      
     }
     // Nota: no se convierten las fechas ya qué es mejor manejarlas directamente en el componente que las recibe
     return value
   }
+  
     /**
    * Obtiene los parámetros actuales desde la URL y los convierte a su tipo original si se desea
    * @param convert - Si true, convierte de string hacia el tipo inferido (number, boolean, ...)
    */
+    const getStringUrl = (key: string, paramsUrl: Record<string, unknown>) => {
+      const isKeyArray = Array.isArray(TOTAL_PARAMS_PAGE[key])
+      if (isKeyArray) {
+
+        if (arraySerialization === 'brackets') {
+
+          const arrayUrl = searchParams.getAll(`${key}[]`)
+          const encodedQueryArray = transformParamsToURLSearch({ [key]: arrayUrl }).toString()
+          // de esta forma se decodifica el array de la URL a su forma original ej: tags[]=tag1&tags[]=tag2&tags[]=tag3
+          const unencodeQuery = decodeURIComponent(encodedQueryArray)
+          return unencodeQuery
+        }
+        const arrayValue = searchParams.getAll(key)
+        const stringResult = transformParamsToURLSearch({ [key]: arrayValue }).toString()
+        return stringResult
+      } else {
+   
+        return paramsUrl[key] as string
+      }
+     }
+     const getParamsObj = (searchParams: URLSearchParams): Record<string, string | string[]> => {
+      const paramsObj: Record<string, string | string[]> = {};
+      for (const [key, value] of searchParams.entries()) {
+        if (key.endsWith('[]')) {
+          const bareKey = key.replace('[]', '');
+          if (paramsObj[bareKey]) {
+            (paramsObj[bareKey] as string[]).push(value);
+          } else {
+            paramsObj[bareKey] = [value];
+          }
+        } else {
+          // Si la key ya existe, se trata de un parámetro repetido
+          if (paramsObj[key]) {
+            if (Array.isArray(paramsObj[key])) {
+              (paramsObj[key] as string[]).push(value);
+            } else {
+              paramsObj[key] = [paramsObj[key] as string, value];
+            }
+          } else {
+            paramsObj[key] = value;
+          }
+        }
+      }
+      return paramsObj;
+     }
+  
     const getParams = ({ convert = true } = {}): MergeParams<M, O> => {
       // se extraen todos los parametros de la URL y se convierten en un objeto
-      const paramsUrl = Object.fromEntries(searchParams.entries())
-  
+      const paramsUrl = arraySerialization === 'brackets' ? getParamsObj(searchParams) : Object.fromEntries(searchParams.entries())
+
+      console.log({ PARAMS_URL_GET: paramsUrl })
+
       const params = Object.keys(paramsUrl).reduce((acc, key) => {
         if (Object.hasOwn(TOTAL_PARAMS_PAGE, key)) {
-          acc[key] = convert
-            ? convertOriginalType(paramsUrl[key], key)
-            : paramsUrl[key]
+          const realKey = arraySerialization === 'brackets' ? key.replace('[]', '') : key
+          
+          acc[realKey] = convert === true
+            ? convertOriginalType(paramsUrl[key] as string, key)
+            :  getStringUrl(key, paramsUrl)
         }
         return acc
       }, {})
@@ -284,10 +355,10 @@ export const useMagicSearchParams = <
     // Se calculan los parametros omitidos, es decir, los parametros que no se han enviado en la petición
     const params = getParams()
     // Nota: será necesario omitir los parámetros que son arrays porque la idea no es reemplazarlos sino agregarlos o eliminar algunos valores
-    const newParamsWithoutArray = Object.keys(newParams).filter((key) => !Array.isArray(TOTAL_PARAMS_PAGE[key]))
+    const newParamsWithoutArray = Object.entries(newParams).filter(([key,]) => !Array.isArray(TOTAL_PARAMS_PAGE[key]))
     const result = Object.assign({
       ...params,
-      ...newParamsWithoutArray,
+      ...Object.fromEntries(newParamsWithoutArray),
       ...forceParams // los parámetros forzados siempre se enviarán y mantendrán su valor
     })
     const paramsFiltered: OptionalParamsFiltered = Object.keys(result).reduce((acc, key) => {
@@ -322,8 +393,12 @@ export const useMagicSearchParams = <
   }
 
   const mandatoryParameters = () => {
-    const totalParametros = getParams({ convert: false })
-    const paramsUrlFound = Object.keys(totalParametros).reduce(
+
+    // Nota: en caso haya arrays en la url se convierten a su forma original ej: tags=['tag1', 'tag2'] caso contrario se extraen los parametros sin convertir para optimizar el rendimiento
+    const isNecessaryConvert: boolean = ARRAY_KEYS.length > 0 ? true : false
+    const totalParametros: Record<string, unknown>  = getParams({ convert: isNecessaryConvert })
+
+    const paramsUrlFound: Record<string, boolean> = Object.keys(totalParametros).reduce(
       (acc, key) => {
         if (Object.hasOwn(mandatory, key)) {
           acc[key] = totalParametros[key]
@@ -332,19 +407,24 @@ export const useMagicSearchParams = <
       },
       {}
     )
+    console.log({paramsUrlFound})
     return paramsUrlFound
   }
 
   const clearParams = ({ keepMandatoryParams = true } = {}): void => {
     // por defecto no se limpian los parámetros obligatorios de la paginación ya que se perdería la paginación actual
-    const paramsTransformed = transformParamsToString({
-      ...mandatory,
-       // en caso se encuentren parametros en la URL reemplazarán los parámetros mandatorios por defecto
-       ...(keepMandatoryParams && {
-        ...mandatoryParameters()
-      }),
-      ...forceParams // los parámetros forzados siempre se enviarán y mantendrán su valor
-    })
+
+ 
+    const paramsTransformed = transformParamsToURLSearch(
+      {
+        ...mandatory,
+         // en caso se encuentren parametros en la URL reemplazarán los parámetros mandatorios por defecto
+         ...(keepMandatoryParams && {
+          ...mandatoryParameters()
+        }),
+        ...forceParams // los parámetros forzados siempre se enviarán y mantendrán su valor
+      }
+    )
     setSearchParams(paramsTransformed) 
   }
 
@@ -367,9 +447,12 @@ export const useMagicSearchParams = <
     const finallyParamters = calculateOmittedParameters(newParams, keepParams)
     console.log({finallyParamters})
     const convertedArrayValues = appendArrayValues(finallyParamters, newParams)
-    const paramsSorted = new URLSearchParams(sortParameters(convertedArrayValues))
 
-    setSearchParams(paramsSorted)
+    const paramsSorted = sortParameters(convertedArrayValues)
+    console.log({paramsSorted})
+
+
+    setSearchParams(transformParamsToURLSearch(paramsSorted))
 
   }
   return {
