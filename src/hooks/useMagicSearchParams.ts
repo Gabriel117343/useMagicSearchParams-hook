@@ -137,7 +137,7 @@ export const useMagicSearchParams = <
           console.log({CONBINED_STRING: combined})
         } else if (Array.isArray(incoming)) {
           // si se pasa un array los valores repetidos se fusionan en un solo valor
-          combined = Array.from(new Set([...currentValues, ...incoming]));
+          combined = Array.from(new Set([ ...incoming]));
           console.log({incoming})
           console.log({combined})
         } else {
@@ -259,18 +259,17 @@ export const useMagicSearchParams = <
       return parseInt(value)
     } else if (typeof TOTAL_PARAMS_PAGE[key] === 'boolean') {
       return value === 'true'
-    } else if (Array.isArray(TOTAL_PARAMS_PAGE[key])) { // en caso se pase un array como parámetro, esta tecnica se representa como un string separado por comas ej: /?parametro=valor1,valor2,valor3
+    } else if (Array.isArray(TOTAL_PARAMS_PAGE[key])) {
+      // El resultado será un array valido representado en la URL ej: tags=tag1,tag2,tag3 a ['tag1', 'tag2', 'tag3'], útil para conbinar los valores de los arrays con los nuevos
  
       if (arraySerialization === 'csv') {
-
         return searchParams.getAll(key).join('').split(',')
       } else if (arraySerialization === 'repeat') {
     
         console.log({SEARCH_PARAMS: searchParams.getAll(key)})
         return searchParams.getAll(key)
       } else if (arraySerialization === 'brackets') {
-   
-        return 'sdafkjñasdflk'
+        return searchParams.getAll(`${key}[]`)
       }
      
      
@@ -292,6 +291,11 @@ export const useMagicSearchParams = <
           const arrayUrl = searchParams.getAll(`${key}[]`)
           const encodedQueryArray = transformParamsToURLSearch({ [key]: arrayUrl }).toString()
           // de esta forma se decodifica el array de la URL a su forma original ej: tags[]=tag1&tags[]=tag2&tags[]=tag3
+          const unencodeQuery = decodeURIComponent(encodedQueryArray)
+          return unencodeQuery
+        } else if (arraySerialization === 'csv') {
+          const arrayValue = searchParams.getAll(key)
+          const encodedQueryArray = transformParamsToURLSearch({ [key]: arrayValue }).toString()
           const unencodeQuery = decodeURIComponent(encodedQueryArray)
           return unencodeQuery
         }

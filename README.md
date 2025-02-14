@@ -331,7 +331,7 @@ El hook `useMagicSearchParams` ahora permite gestionar parámetros de tipo array
 
 > [!TIP]
 > Al extraer los valores de `tags` con `getParams({ convert: true })` obtendrás:
-> - **String** si no se especifica conversión: `tags="tag1,tag2,tag3"`
+> - **String** si no se especifica conversión (ej:csv): `"tags=tag1,tag2,tag3"`
 > - **Array** si se convierte: `tags=['tag1', 'tag2', 'tag3']`  
 > _Esto mejora la consistencia y tipado en tu aplicación._
 
@@ -352,8 +352,6 @@ El hook `useMagicSearchParams` ahora permite gestionar parámetros de tipo array
 ### Ejemplos de Uso en Código 👨‍💻
 
 ```jsx
-// filepath: /c:/Users/soliz/OneDrive/Escritorio/naa/useMagicSearchParams-hook/src/App.tsx
-import React from "react";
 import { useMagicSearchParams } from "../src/hooks/useMagicSearchParams";
 import { paramsUsers } from "../src/constants/defaulParamsPage";
 
@@ -361,14 +359,12 @@ export default function App() {
   const { searchParams, getParams, updateParams, clearParams } = useMagicSearchParams({
     ...paramsUsers,
     defaultParams: paramsUsers.mandatory,
-    forceParams: { page_size: 10 },
     arraySerialization: 'repeat', // Puedes cambiar a 'csv' o 'brackets' según prefieras.
     omitParamsByValues: ["all", "default"],
   });
 
   // Obtener parámetros convertidos (por ejemplo, tags se obtiene como array)
   const { tags, page } = getParams({ convert: true });
-  console.log({ tags, page });
 
  const availableTags = ['react', 'node', 'typescript', 'javascript']
 
@@ -377,11 +373,11 @@ export default function App() {
     // si ya existe se elimina, sino se agrega
     updateParams({ newParams: { tags: newTag } });
   };
-  // pasar un array de tags
+  // pasar un array de tags, útil para agregar múltiples filtros a la vez
   const handleTagToggleArray = (newTags: string[]) => {
     // el hook se encarga de que no existán valores repetidos en el array haciendo 
     // merge con los anteriores
-    updateParams({ newParams: { tags: [..newTags] } });
+    updateParams({ newParams: { tags: [...tags, ..newTags] } });
   };
   return (
     <div>
@@ -411,15 +407,16 @@ export default function App() {
 
 En este ejemplo, al utilizar la serialización **repeat**, la `URL` resultante se verá así:
 
-**Modo (repeat)**: `?page=1&page_size=10&only_is_active=false&tags=tag1&tags=tag2&tags=tag3`
-**Modo (csv)**: `?page=1&page_size=10&only_is_active=false&tags=tag1,tag2,tag3`
-**Modo (brackets)**: `?page=1&page_size=10&only_is_active=false&tags[]=tag1&tags[]=tag2&tags[]=tag3`
+- **Modo (repeat)**: `?page=1&page_size=10&only_is_active=false&tags=tag1&tags=tag2&tags=tag3`
+- **Modo (csv)**: `?page=1&page_size=10&only_is_active=false&tags=tag1,tag2,tag3`
+- **Modo (brackets)**: `?page=1&page_size=10&only_is_active=false&tags[]=tag1&tags[]=tag2&tags[]=tag3`
 
 ### Esta nueva funcionalidad permite:
 
 - Enviar arrays de forma que se ajusten a las expectativas del backend.
 - Gestionar de forma centralizada la conversión y serialización, reduciendo la complejidad en componentes individuales.
 - Mantener la URL limpia y consistente, independientemente del método de serialización elegido.
+- **Dar control total al desarrollador** sobre cómo transformar o enviar los parámetros, permitiendo operaciones personalizadas en función del backend.
 
 ### ¿Por Qué Esta Funcionalidad Es Clave? 🎯
 

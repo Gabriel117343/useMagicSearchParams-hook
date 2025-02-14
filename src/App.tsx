@@ -9,30 +9,6 @@ export default function App() {
    * - forceParams: Fuerza el valor de page_size a 10, evitando que el usuario lo modifique.
    * - omitParamsByValues: Omite valores como 'all' y 'default' de la URL.
    */
-
-
-
-  // const getParams = ({ convert = true } = {}): MergeParams<M, O> => {
-  //   // se extraen todos los parametros de la URL y se convierten en un objeto
-  //   const paramsUrl = Object.fromEntries(searchParams.entries())
-    
-
-  //   console.log({ PARAMS_URL_GET: paramsUrl })
-
-  //   const params = Object.keys(paramsUrl).reduce((acc, key) => {
-  //     if (Object.hasOwn(TOTAL_PARAMS_PAGE, key)) {
-  //       const realKey = arraySerialization === 'brackets' ? key.replace('[]', '') : key
-  //       console.log({realKey})
-  //       acc[realKey] = convert === true
-  //         ? convertOriginalType(paramsUrl[key], key)
-  //         :  getStringUrl(key, paramsUrl)
-  //     }
-  //     return acc
-  //   }, {})
-
-  //   return params as MergeParams<M, O>
-  // }
-
   const { searchParams, getParams, updateParams, clearParams } = useMagicSearchParams({
     ...paramsUsers,
     defaultParams: paramsUsers.mandatory,
@@ -86,7 +62,14 @@ export default function App() {
   const availableTags = ['react', 'node', 'typescript', 'javascript']
   const handleTagToggle = (tag: string[] | string) => {
 
-    updateParams({ newParams: { tags: tag } })
+    const tagsFiltered = [...tags]
+    if (tagsFiltered.includes(tag)) {
+      const index = tagsFiltered.indexOf(tag)
+      tagsFiltered.splice(index, 1)
+    } else {
+      tagsFiltered.push(tag)
+    }
+    updateParams({ newParams: { tags: [...tagsFiltered] } })
   }
   console.log({  searchTags: searchParams.getAll('tags') }) // tags=react,node,javascript
   /**
@@ -95,7 +78,7 @@ export default function App() {
 
   const handleClear = () => {
     // Los valores de los parámetros mandatorios que fuerón modificados se mantienen, caso contrario se reestablecen a los valores por defecto
-    clearParams({keepMandatoryParams: true });
+    clearParams({keepMandatoryParams: false });
   };
 
   const converStringBoolean = (value: string | boolean) => {
@@ -121,7 +104,7 @@ export default function App() {
             htmlFor="search"
             className="block text-sm font-medium text-gray-700 mb-1"
           >
-            Buscar Usuarios:
+            Búscar Usuarios:
           </label>
           <input
             type="text"
@@ -129,6 +112,7 @@ export default function App() {
             onChange={handleSearchChange}
             placeholder="Ingresa el nombre o apellido..."
             className="w-full border border-gray-300 rounded-md p-3 focus:ring-blue-500 focus:border-blue-500"
+            /* Nota: normalmente se utilizará un debounce por lo que este input debería ser no controlado (defaultValue) */
             defaultValue={search}
           />
         </div>
@@ -163,7 +147,7 @@ export default function App() {
               type="checkbox"
               id="only_is_active"
               onChange={() =>
-                updateParams({ newParams: { only_is_active: !converStringBoolean(only_is_active) } })
+                updateParams({ newParams: { only_is_active: true } })
               }
               checked={converStringBoolean(only_is_active)}
         

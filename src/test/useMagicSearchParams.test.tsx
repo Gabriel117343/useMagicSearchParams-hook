@@ -206,7 +206,7 @@ describe('useMagicSearchParams Hook', () => {
     expect(updatedParams.tags).toEqual(['uno', 'dos', 'tres']);
   });
   
-  it('Debe combinar arrays de tags sin duplicados en modo repeat', () => {
+  it('Debe permitir al desarrollador combinar arrays de tags, controlando qué se mantiene', () => {
     const { result } = renderHook(
       () =>
         useMagicSearchParams({
@@ -217,16 +217,160 @@ describe('useMagicSearchParams Hook', () => {
       { wrapper: Wrapper }
     );
   
-    // Verifica el estado inicial de los tags
+    // Verifica que los tags iniciales sean: ['uno', 'dos', 'tres']
     const initialParams = result.current.getParams({ convert: true });
     expect(initialParams.tags).toEqual(['uno', 'dos', 'tres']);
   
-    // Actualiza enviando un array que incluye valores ya existentes y nuevos
+    // El desarrollador decide combinar manualmente:
+    // Toma los tags actuales y agrega los nuevos, filtrando duplicados.
+    const newTags = ['react', 'dos', 'nuevo'];
+    const combinedTags = [
+      ...initialParams.tags,
+      ...newTags.filter((tag) => !initialParams.tags.includes(tag)),
+    ];
+  
     act(() => {
-      result.current.updateParams({ newParams: { tags: ['react', 'dos', 'nuevo'] } });
+      result.current.updateParams({ newParams: { tags: combinedTags } });
     });
+  
     const updatedParams = result.current.getParams({ convert: true });
-    // Se espera la unión de ambos arrays sin duplicados
+    // Se espera la unión manual de ambos arrays sin duplicados
     expect(updatedParams.tags).toEqual(['uno', 'dos', 'tres', 'react', 'nuevo']);
   });
+
+})
+
+  // TEST DE COMBINACIÓN DE ARRAYS ----------------------
+
+describe('Test de serialización de arrays en getParams', () => {
+
+  it('Debe convertir tags a array en modo CSV al usar convert:true', () => {
+    const initialEntries = ['/?tags=uno,dos,tres']
+    const { result } = renderHook(
+      () =>
+        useMagicSearchParams({
+          ...paramsUsers,
+          arraySerialization: 'csv'
+        }),
+      { wrapper: ({ children }) => <Wrapper initialEntries={initialEntries}>{children}</Wrapper> }
+    )
+
+    const { tags } = result.current.getParams({ convert: true })
+    expect(tags).toEqual(['uno', 'dos', 'tres'])
+  })
+
+  it('Debe devolver los tags como string en modo CSV al usar convert:false', () => {
+    const initialEntries = ['/?tags=uno,dos,tres']
+    const { result } = renderHook(
+      () =>
+        useMagicSearchParams({
+          ...paramsUsers,
+          arraySerialization: 'csv'
+        }),
+      { wrapper: ({ children }) => <Wrapper initialEntries={initialEntries}>{children}</Wrapper> }
+    )
+
+    const { tags } = result.current.getParams({ convert: false })
+    // Se espera que para CSV se retorne la cadena tal como viene en la URL
+    expect(tags).toEqual('tags=uno,dos,tres')
+  })
+
+  it('Debe convertir tags a array en modo REPEAT al usar convert:true', () => {
+    // En repeat cada tag se envía como un parámetro separado
+    const initialEntries = ['/?tags=uno&tags=dos&tags=tres']
+    const { result } = renderHook(
+      () =>
+        useMagicSearchParams({
+          ...paramsUsers,
+          arraySerialization: 'repeat'
+        }),
+      { wrapper: ({ children }) => <Wrapper initialEntries={initialEntries}>{children}</Wrapper> }
+    )
+
+    const { tags } = result.current.getParams({ convert: true })
+    expect(tags).toEqual(['uno', 'dos', 'tres'])
+  })
+
+  it('Debe devolver los tags en modo REPEAT en formato raw al usar convert:false', () => {
+    // En repeat, aunque el hook procesa internamente los valores, al no convertir se esperan los mismos valores
+    // (Nota: dependiendo de la implementación, se podría retornar el primer valor; en este test asumimos que getParams usa getAll internamente si se requiere mantener arrays)
+    const initialEntries = ['/?tags=uno&tags=dos&tags=tres']
+    const { result } = renderHook(
+      () =>
+        useMagicSearchParams({
+          ...paramsUsers,
+          arraySerialization: 'repeat'
+        }),
+      { wrapper: ({ children }) => <Wrapper initialEntries={initialEntries}>{children}</Wrapper> }
+    )
+
+    const { tags } = result.current.getParams({ convert: false })
+    // Suponiendo que en modo repeat se retorna el valor concatenado (tal como lo enviaría al backend)
+    expect(tags).toEqual('tags=uno&tags=dos&tags=tres')
+  })
+
+  it('Debe convertir tags a array en modo BRACKETS al usar convert:true', () => {
+    // En brackets se espera que la URL contenga tags[]=uno&tags[]=dos&tags[]=tres
+    const initialEntries = ['/?tags[]=uno&tags[]=dos&tags[]=tres']
+    const { result } = renderHook(
+      () =>
+        useMagicSearchParams({
+          ...paramsUsers,
+          arraySerialization: 'brackets'
+        }),
+      { wrapper: ({ children }) => <Wrapper initialEntries={initialEntries}>{children}</Wrapper> }
+    )
+
+    const { tags } = result.current.getParams({ convert: true })
+    expect(tags).toEqual(['uno', 'dos', 'tres'])
+  })
+
+  it('Debe devolver los tags en modo BRACKETS en formato raw al usar convert:false', () => {
+    const initialEntries = ['/?tags[]=uno&tags[]=dos&tags[]=tres']
+    const { result } = renderHook(
+      () =>
+        useMagicSearchParams({
+          ...paramsUsers,
+          arraySerialization: 'brackets'
+        }),
+      { wrapper: ({ children }) => <Wrapper initialEntries={initialEntries}>{children}</Wrapper> }
+    )
+
+    const { tags } = result.current.getParams({ convert: false })
+    // Se espera que para brackets se conserve la notación con corchetes en la llave,
+    // probablemente como resultado procesado del getParamsObj.
+    // Ajusta según la implementación; aquí se espera que se devuelva una cadena concatenada.
+    expect(tags).toEqual('tags[]=uno&tags[]=dos&tags[]=tres')
+  })
+})
+describe('Test de combinación de arrays en updateParams', () => {
+  it('Permite combinar los tags actuales con nuevos de forma manual y sin duplicados', () => {
+    const { result } = renderHook(
+      () =>
+        useMagicSearchParams({
+          ...paramsUsers,
+          defaultParams: paramsUsers.mandatory,
+          arraySerialization: 'repeat'
+        }),
+      { wrapper: Wrapper }
+    )
+
+    // Suponemos que los tags iniciales son ['uno', 'dos', 'tres']
+    const initialParams = result.current.getParams({ convert: true })
+    expect(initialParams.tags).toEqual(['uno', 'dos', 'tres'])
+
+    // El desarrollador decide combinar manteniendo los actuales y agregando nuevos sin duplicados
+    const newTags = ['react', 'dos', 'nuevo']
+    const combinedTags = [
+      ...initialParams.tags,
+      ...newTags.filter((tag) => !initialParams.tags.includes(tag))
+    ]
+
+    act(() => {
+      result.current.updateParams({ newParams: { tags: combinedTags } })
+    })
+
+    const updatedParams = result.current.getParams({ convert: true })
+    expect(updatedParams.tags).toEqual(['uno', 'dos', 'tres', 'react', 'nuevo'])
+  })
 })
