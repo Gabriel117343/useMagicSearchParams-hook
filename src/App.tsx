@@ -1,8 +1,13 @@
 import React from "react";
 import { useMagicSearchParams } from "../src/hooks/useMagicSearchParams";
 import { paramsUsers } from "../src/constants/defaulParamsPage";
+import { DarkSvg } from './components/ui/svg/DarkSvg'
+import { LightSvg } from './components/ui/svg/LightSvg'
+import { useHandleTheme } from './hooks/useHandleTheme'
 
 export default function App() {
+
+  const { theme, onChangeTheme } = useHandleTheme()
   /**
    * Inicializa el hook con los parámetros obligatorios y opcionales definidos en paramsUsers.
    * - defaultParams: Establece los parámetros obligatorios por defecto al cargar el componente.
@@ -83,7 +88,7 @@ export default function App() {
 
   const converStringBoolean = (value: string | boolean) => {
     // Dado que desde la url se obtiene un string, se convierte a booleano (asegurara el cambio caso se haya elegio en getParams convert: false)
-    if (typeof value === 'boolean') return value
+    if (typeof value === 'boolean') return !value
     if (value === 'true') {
       return true
     } else if (value === 'false') {
@@ -92,8 +97,18 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center p-6">
-      <div className="w-full max-w-4xl bg-white shadow-lg rounded-lg p-8 mb-6">
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center p-6  bg-gradient-to-r dark:from-blue-700 dark:via-blue-800 dark:to-blue-900 dark:text-white ">
+    
+      <div className="absolute top-0 right-0 p-4">
+        <button className="p-4 bg-slate-200 rounded-sm hover: bg-slate-300" onClick={onChangeTheme}>
+          {theme === 'light' ? <LightSvg width={24} height={24} /> : <DarkSvg width={24} height={24} />}
+        </button>
+      </div>
+      <div className="w-full max-w-4xl bg-white shadow-lg rounded-lg p-8 mb-6 dark:bg-transparent relative overflow-hidden z-50">
+
+        {theme === 'dark' &&  (
+          <div className="absolute top-0 left-0 right-0 bottom-0 filter blur-2xl hover:blur-3xl bg-black bg-opacity-40 -z-10 "></div>
+        )}
         <h1 className="text-3xl font-bold mb-6 text-center">
           Gestión de Usuarios
         </h1>
@@ -102,7 +117,7 @@ export default function App() {
         <div className="mb-6">
           <label
             htmlFor="search"
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="block text-sm font-medium text-gray-700 mb-1 dark:text-white"
           >
             Búscar Usuarios:
           </label>
@@ -121,7 +136,7 @@ export default function App() {
         <div className="mb-6">
           <label
             htmlFor="order"
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="block text-sm font-medium text-gray-700 mb-1 dark:text-white"
           >
             Ordenar Por:
           </label>
@@ -130,9 +145,9 @@ export default function App() {
             value={order}
             onChange={handleOrderChange}
             defaultValue={order}
-            className="w-full border border-gray-300 rounded-md p-3 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full border border-gray-300 rounded-md p-3 focus:ring-blue-500 focus:border-blue-500 dark:text-gray-700"
           >
-            <option value="all">Ninguno(all)</option>
+            <option value="all" >Ninguno(all)</option>
             <option value="asc">Ascendente(asc)</option>
             <option value="desc">Descendente(desc)</option>
           </select>
@@ -147,13 +162,13 @@ export default function App() {
               type="checkbox"
               id="only_is_active"
               onChange={() =>
-                updateParams({ newParams: { only_is_active: true } })
+                updateParams({ newParams: { only_is_active: converStringBoolean(only_is_active) } })
               }
               checked={converStringBoolean(only_is_active)}
         
               className="text-blue-500 rounded"
             />
-            <span className="text-sm text-gray-700">
+            <span className="text-sm text-gray-700 dark:text-white">
               Mostrar solo usuarios activos
             </span>
           </label>
@@ -184,7 +199,7 @@ export default function App() {
         {/* Sección de Parámetros Actuales */}
         <div className="mb-6">
           <h3 className="text-lg font-semibold mb-3">Parámetros Actuales:</h3>
-          <div className="bg-gray-50 p-5 rounded-md shadow-inner">
+          <div className="bg-gray-50 p-5 rounded-md shadow-inner dark:bg-zinc-900">
             <p>
               <strong>Página:</strong> {page}
             </p>
@@ -200,7 +215,7 @@ export default function App() {
               {JSON.stringify(tags)}
             </p>
             <hr className="mt-2" />
-            <small className="bg-yellow-300 rounded-sm p-0.5">Nota: Asi se deberían de enviarse al backend</small>
+            <small className="bg-yellow-300 rounded-sm p-0.5 dark:bg-cyan-600">Nota: Asi se deberían de enviarse al backend</small>
             <p>
               <strong>Tags sin convertir:</strong>
               {' '}
@@ -239,14 +254,14 @@ export default function App() {
       </div>
 
       {/* Segunda Sección de Prueba */}
-      <div className="w-full max-w-4xl bg-white shadow-lg rounded-lg p-8">
+      <div className="w-full max-w-4xl bg-white shadow-lg rounded-lg p-8 dark:bg-zinc-800">
         <h2 className="text-2xl font-semibold mb-6">Formulario de Prueba</h2>
 
         <form className="space-y-6">
           <div>
             <label
               htmlFor="testInput"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-gray-700 mb-1 dark:text-white"
             >
               Parámetro de Prueba:
             </label>
