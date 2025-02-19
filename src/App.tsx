@@ -1,27 +1,27 @@
 import React from "react";
 import { useMagicSearchParams } from "../src/hooks/useMagicSearchParams";
 import { paramsUsers } from "../src/constants/defaulParamsPage";
-import { DarkSvg } from './components/ui/svg/DarkSvg'
-import { LightSvg } from './components/ui/svg/LightSvg'
-import { useHandleTheme } from './hooks/useHandleTheme'
+import { DarkSvg } from "./components/ui/svg/DarkSvg";
+import { LightSvg } from "./components/ui/svg/LightSvg";
+import { useHandleTheme } from "./hooks/useHandleTheme";
 
 export default function App() {
-
-  const { theme, onChangeTheme } = useHandleTheme()
+  const { theme, onChangeTheme } = useHandleTheme();
   /**
    * Inicializa el hook con los parámetros obligatorios y opcionales definidos en paramsUsers.
    * - defaultParams: Establece los parámetros obligatorios por defecto al cargar el componente.
    * - forceParams: Fuerza el valor de page_size a 10, evitando que el usuario lo modifique.
    * - omitParamsByValues: Omite valores como 'all' y 'default' de la URL.
    */
-  const { searchParams, getParams, updateParams, clearParams } = useMagicSearchParams({
-    ...paramsUsers,
-    defaultParams: paramsUsers.mandatory,
-    forceParams: { page_size: 10 },
-    arraySerialization: 'repeat', // tags=tag1,tag2,tag3
+  const { searchParams, getParams, updateParams, clearParams } =
+    useMagicSearchParams({
+      ...paramsUsers,
+      defaultParams: paramsUsers.mandatory,
+      forceParams: { page_size: 10 },
+      arraySerialization: "repeat", // tags=tag1,tag2,tag3
 
-    omitParamsByValues: ["all", "default"], // cuando se envíe 'all' o 'default' en la URL, se omitirán
-  });
+      omitParamsByValues: ["all", "default"], // cuando se envíe 'all' o 'default' en la URL, se omitirán
+    });
 
   /**
    * Obtiene los parámetros actuales de la URL, convirtiéndolos a sus tipos originales.
@@ -35,7 +35,7 @@ export default function App() {
     convert: true,
   });
 
-  const { tags: tagsWithoutConvert } = getParams({ convert: false })
+  const { tags: tagsWithoutConvert } = getParams({ convert: false });
 
   /**
    * Maneja el cambio en el campo de búsqueda.
@@ -54,60 +54,64 @@ export default function App() {
     const selectedOrder = e.target.value;
     updateParams({ newParams: { order: selectedOrder } });
   };
-  
+
   /**
    * handleTagToggle
    * PARAMETROS DE ENTRADA:
    * caso 1 (array de tags): [1,2,3,4] resultado: tags=1,2,3,4, en caso se pase otro array de tags con valores repetidos se mantienen los valores únicos
    * Útil para aplicar un conjunto de tags a la vez
-   * 
+   *
    * caso 2 (un solo tag): 1 resultado: tags=1, en caso se pase un tag ya existente se elimina de la lista de tags
    * Útil para un toggle de tags presionando botón por botón
    */
-  const availableTags = ['react', 'node', 'typescript', 'javascript']
+  const availableTags = ["react", "node", "typescript", "javascript"];
   const handleTagToggle = (tag: string[] | string) => {
-
-    const tagsFiltered = [...tags]
+    const tagsFiltered = [...tags];
     if (tagsFiltered.includes(tag)) {
-      const index = tagsFiltered.indexOf(tag)
-      tagsFiltered.splice(index, 1)
+      const index = tagsFiltered.indexOf(tag);
+      tagsFiltered.splice(index, 1);
     } else {
-      tagsFiltered.push(tag)
+      tagsFiltered.push(tag);
     }
-    updateParams({ newParams: { tags: [...tagsFiltered] } })
-  }
-  console.log({  searchTags: searchParams.getAll('tags') }) // tags=react,node,javascript
+    updateParams({ newParams: { tags: [...tagsFiltered] } });
+  };
+  console.log({ searchTags: searchParams.getAll("tags") }); // tags=react,node,javascript
   /**
    * Reinicia todos los parámetros a sus valores por defecto.
    */
 
   const handleClear = () => {
     // Los valores de los parámetros mandatorios que fuerón modificados se mantienen, caso contrario se reestablecen a los valores por defecto
-    clearParams({keepMandatoryParams: false });
+    clearParams({ keepMandatoryParams: false });
   };
 
   const converStringBoolean = (value: string | boolean) => {
     // Dado que desde la url se obtiene un string, se convierte a booleano (asegurara el cambio caso se haya elegio en getParams convert: false)
-    if (typeof value === 'boolean') return !value
-    if (value === 'true') {
-      return true
-    } else if (value === 'false') {
-      return false
+    if (typeof value === "boolean") return !value;
+    if (value === "true") {
+      return true;
+    } else if (value === "false") {
+      return false;
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center p-6  bg-gradient-to-r dark:from-blue-700 dark:via-blue-800 dark:to-blue-900 dark:text-white ">
-    
       <div className="absolute top-0 right-0 p-4">
-        <button className="p-4 bg-slate-200 rounded-sm hover: bg-slate-300" onClick={onChangeTheme}>
-          {theme === 'light' ? <LightSvg width={24} height={24} /> : <DarkSvg width={24} height={24} />}
+        <button
+          className="p-4 bg-slate-200 rounded-sm hover:bg-slate-300"
+          onClick={onChangeTheme}
+        >
+          {theme === "light" ? (
+            <LightSvg width={24} height={24} />
+          ) : (
+            <DarkSvg width={24} height={24} />
+          )}
         </button>
       </div>
       <div className="w-full max-w-4xl bg-white shadow-lg rounded-lg p-8 mb-6 dark:bg-transparent relative overflow-hidden z-50">
-
-        {theme === 'dark' &&  (
-          <div className="absolute top-0 left-0 right-0 bottom-0 filter blur-2xl hover:blur-3xl bg-black bg-opacity-40 -z-10 "></div>
+        {theme === "dark" && (
+          <div className="absolute top-0 left-0 right-0 bottom-0 filter blur-2xl hover:blur-3xl bg-black opacity-40 -z-10 "></div>
         )}
         <h1 className="text-3xl font-bold mb-6 text-center">
           Gestión de Usuarios
@@ -147,7 +151,7 @@ export default function App() {
             defaultValue={order}
             className="w-full border border-gray-300 rounded-md p-3 focus:ring-blue-500 focus:border-blue-500 dark:text-gray-700"
           >
-            <option value="all" >Ninguno(all)</option>
+            <option value="all">Ninguno(all)</option>
             <option value="asc">Ascendente(asc)</option>
             <option value="desc">Descendente(desc)</option>
           </select>
@@ -162,10 +166,13 @@ export default function App() {
               type="checkbox"
               id="only_is_active"
               onChange={() =>
-                updateParams({ newParams: { only_is_active: converStringBoolean(only_is_active) } })
+                updateParams({
+                  newParams: {
+                    only_is_active: converStringBoolean(only_is_active),
+                  },
+                })
               }
               checked={converStringBoolean(only_is_active)}
-        
               className="text-blue-500 rounded"
             />
             <span className="text-sm text-gray-700 dark:text-white">
@@ -174,24 +181,25 @@ export default function App() {
           </label>
         </div>
 
-
         {/* Botones de Tags */}
-        <div className='mb-6'>
-          <h3 className='text-lg font-semibold mb-3'>Selecciona Tags:</h3>
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-3">Selecciona Tags:</h3>
           <div className="flex flex-wrap gap-2">
-            {availableTags.map(tag => {
-              const isActive = Array.isArray(tags) && tags.includes(tag)
+            {availableTags.map((tag) => {
+              const isActive = Array.isArray(tags) && tags.includes(tag);
               return (
                 <button
                   key={tag}
                   onClick={() => handleTagToggle(tag)}
                   className={`px-4 py-2 rounded-md border ${
-                    isActive ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'
+                    isActive
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-200 text-gray-700"
                   }`}
                 >
                   {tag}
                 </button>
-              )
+              );
             })}
           </div>
         </div>
@@ -207,18 +215,18 @@ export default function App() {
               <strong>Tamaño de Página:</strong> {10}
             </p>
             <p>
-              <strong>Solo Activos:</strong> {converStringBoolean(only_is_active) ? "Sí" : "No"}
+              <strong>Solo Activos:</strong>{" "}
+              {converStringBoolean(only_is_active) ? "Sí" : "No"}
             </p>
             <p>
-              <strong>Tags:</strong> 
-              {' '}
-              {JSON.stringify(tags)}
+              <strong>Tags:</strong> {JSON.stringify(tags)}
             </p>
             <hr className="mt-2" />
-            <small className="bg-yellow-300 rounded-sm p-0.5 dark:bg-cyan-600">Nota: Asi se deberían de enviarse al backend</small>
+            <small className="bg-yellow-300 rounded-sm p-0.5 dark:bg-cyan-600">
+              Nota: Asi se deberían de enviarse al backend
+            </small>
             <p>
-              <strong>Tags sin convertir:</strong>
-              {' '}
+              <strong>Tags sin convertir:</strong>{" "}
               {JSON.stringify(tagsWithoutConvert)}
             </p>
             <p>
