@@ -1,11 +1,14 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useMagicSearchParams } from "../src/hooks/useMagicSearchParams";
 import { paramsUsers } from "../src/constants/defaulParamsPage";
 import { DarkSvg } from "./components/ui/svg/DarkSvg";
 import { LightSvg } from "./components/ui/svg/LightSvg";
 import { useHandleTheme } from "./hooks/useHandleTheme";
 
+import { debounce } from 'es-toolkit'
+
 export default function App() {
+
   const { theme, onChangeTheme } = useHandleTheme();
   /**
    * Inicializa el hook con los parámetros obligatorios y opcionales definidos en paramsUsers.
@@ -13,13 +16,12 @@ export default function App() {
    * - forceParams: Fuerza el valor de page_size a 10, evitando que el usuario lo modifique.
    * - omitParamsByValues: Omite valores como 'all' y 'default' de la URL.
    */
-  const { searchParams, getParams, updateParams, clearParams } =
+  const { searchParams, getParams, updateParams, clearParams , getParam, onChange } =
     useMagicSearchParams({
       ...paramsUsers,
       defaultParams: paramsUsers.mandatory,
       forceParams: { page_size: 10 },
-      arraySerialization: "repeat", // tags=tag1,tag2,tag3
-
+      arraySerialization: "csv", // tags=tag1,tag2,tag3
       omitParamsByValues: ["all", "default"], // cuando se envíe 'all' o 'default' en la URL, se omitirán
     });
 
@@ -34,18 +36,59 @@ export default function App() {
   const { page, search, order, only_is_active, tags } = getParams({
     convert: true,
   });
+  // En casos donde se requiera realizar una serie de acciones ascronicas o sincronicas al cambiar un parámetro
+  useEffect(() => {
+    const sub1 = 'search'
+    // const sub2 = 'tags'
+    function fetchData() {
+      // puede ser una llamada a una API o cualquier otra operación asíncrona 
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve('some data')
+        }, 2000)
+      })
 
-  const { tags: tagsWithoutConvert } = getParams({ convert: false });
+    }
+    function showData(data) {
+      console.log('showData', data)
+    }
+    function message() {
 
+      console.log('message')
+      alert(`cambio del parámetro ${sub1} detectado`)
+    }
+ 
+    onChange(sub1, [
+      async () => {
+        const data = await fetchData();
+        showData(data)
+      },
+      message
+    ])
+    // onChange(sub2, [])
+
+  }, [onChange])
+ 
+  
+  const { tags: tagsWithoutConvert } = getParams({ convert: true });
+
+  const tagsArray = getParam("tags", { convert: false });
+  console.log(tagsArray); // react,node,javascript
   /**
    * Maneja el cambio en el campo de búsqueda.
    * - Actualiza el parámetro 'search' y reinicia a la página 1.
    */
+  const TIEMPO_RETRASO = 500;
+ 
+  
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const searchTerm = e.target.value.trim();
     updateParams({ newParams: { search: searchTerm, page: 1 } });
-  };
+  }
+  const searchDebounce = debounce(handleSearchChange, TIEMPO_RETRASO)
 
+
+ 
   /**
    * Maneja el cambio en el select de ordenamiento.
    * - Actualiza el parámetro 'order' manteniendo otros parámetros intactos.
@@ -97,6 +140,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center p-6  bg-gradient-to-r dark:from-blue-700 dark:via-blue-800 dark:to-blue-900 dark:text-white ">
+       <LightSvg width={24} height={24} />
       <div className="absolute top-0 right-0 p-4">
         <button
           className="p-4 bg-slate-200 rounded-sm hover:bg-slate-300"
@@ -128,7 +172,7 @@ export default function App() {
           <input
             type="text"
             id="search"
-            onChange={handleSearchChange}
+            onChange={searchDebounce}
             placeholder="Ingresa el nombre o apellido..."
             className="w-full border border-gray-300 rounded-md p-3 focus:ring-blue-500 focus:border-blue-500"
             /* Nota: normalmente se utilizará un debounce por lo que este input debería ser no controlado (defaultValue) */
@@ -149,11 +193,11 @@ export default function App() {
             value={order}
             onChange={handleOrderChange}
             defaultValue={order}
-            className="w-full border border-gray-300 rounded-md p-3 focus:ring-blue-500 focus:border-blue-500 dark:text-gray-700"
+            className="w-full border border-gray-300 rounded-md p-3 focus:ring-blue-500 focus:border-blue-500 dark:text-white "
           >
-            <option value="all">Ninguno(all)</option>
-            <option value="asc">Ascendente(asc)</option>
-            <option value="desc">Descendente(desc)</option>
+            <option value="all" className="dark:bg-sky-950">Ninguno(all)</option>
+            <option value="asc" className="dark:bg-sky-950">Ascendente(asc)</option>
+            <option value="desc" className="dark:bg-sky-950">Descendente(desc)</option>
           </select>
         </div>
 

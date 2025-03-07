@@ -3,3 +3,23 @@
 @import "tailwindcss" layer(utilities);
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+@theme {
+
+  @keyframes appear {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  --animate-appear: appear 0.5s ease-in-out;
+
+}
+
+@layer components {
+
+ 
+}

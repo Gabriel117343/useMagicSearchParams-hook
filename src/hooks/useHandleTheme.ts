@@ -4,6 +4,7 @@ type Theme = "light" | "dark";
 type OriginTheme = "system" | "user-defined";
 
 export const useHandleTheme = () => {
+
   const originRef = useRef<OriginTheme | "none">("none");
   const actualSystemTheme = window.matchMedia("(prefers-color-scheme: dark)");
 

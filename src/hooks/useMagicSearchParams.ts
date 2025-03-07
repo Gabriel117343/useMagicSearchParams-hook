@@ -1,5 +1,6 @@
 import { useSearchParams } from 'react-router-dom'
-import { useMemo, useEffect } from 'react'
+import { useMemo, useEffect, useRef, useCallback } from 'react'
+
 
 // HOOK PERSONALIZADO CON TECNICAS AVANZADAS PARA MANEJAR LOS PARÁMETROS DE BÚSQUEDA DE CUALQUIER PAGINACIÓN
 
@@ -54,7 +55,9 @@ export const useMagicSearchParams = <
 
 
   const [searchParams, setSearchParams] = useSearchParams() 
-
+    // Ref para almacenar las suscripciones: { [paramName]: [callback, ...] }
+  const subscriptionsRef = useRef<Record<string, Array<() => unknown>>>({}); 
+  const previousParamsRef = useRef<Record<string, unknown>>({})
 
   const TOTAL_PARAMS_PAGE: MergeParams<M, O> = useMemo(() => {
     return { ...mandatory, ...optional };
@@ -332,26 +335,38 @@ export const useMagicSearchParams = <
       }
       return paramsObj;
      }
-  
+    // Optimización: Mientras no se actualicen los parámetros, no se vuelven a recalcular los parámetros actuales de la URL
+    const CURRENT_PARAMS_URL: Record<string, unknown> = useMemo(() => {
+
+      return arraySerialization === 'brackets' ? getParamsObj(searchParams) : Object.fromEntries(searchParams.entries())
+    }, [searchParams, arraySerialization])
+
     const getParams = ({ convert = true } = {}): MergeParams<M, O> => {
       // se extraen todos los parametros de la URL y se convierten en un objeto
-      const paramsUrl = arraySerialization === 'brackets' ? getParamsObj(searchParams) : Object.fromEntries(searchParams.entries())
 
-      console.log({ PARAMS_URL_GET: paramsUrl })
-
-      const params = Object.keys(paramsUrl).reduce((acc, key) => {
+      const params = Object.keys(CURRENT_PARAMS_URL).reduce((acc, key) => {
         if (Object.hasOwn(TOTAL_PARAMS_PAGE, key)) {
           const realKey = arraySerialization === 'brackets' ? key.replace('[]', '') : key
           
           acc[realKey] = convert === true
-            ? convertOriginalType(paramsUrl[key] as string, key)
-            :  getStringUrl(key, paramsUrl)
+            ? convertOriginalType(CURRENT_PARAMS_URL[key] as string, key)
+            :  getStringUrl(key, CURRENT_PARAMS_URL)
         }
         return acc
       }, {})
   
       return params as MergeParams<M, O>
     }
+  type keys = keyof MergeParams<M, O>
+  // Nota: de esta forma se tipa dinámicamente el retorno de la función getParam, teniendo asi autocomplete en el IDE (ej: value.split(','))
+  type TagReturn<T extends boolean> = T extends true ? string[] : string;
+  const getParam = <T extends boolean>(key: keys, options?: { convert: T }): TagReturn<T>  => {
+
+    const keyStr = String(key)
+
+    const value = options?.convert === true ? convertOriginalType(searchParams.get(keyStr), keyStr) : getStringUrl(keyStr,  CURRENT_PARAMS_URL)
+    return value as TagReturn<T> 
+  }
   
   type OptionalParamsFiltered = Partial<O>
 
@@ -411,7 +426,7 @@ export const useMagicSearchParams = <
       },
       {}
     )
-    console.log({paramsUrlFound})
+
     return paramsUrlFound
   }
 
@@ -449,20 +464,53 @@ export const useMagicSearchParams = <
     }
 
     const finallyParamters = calculateOmittedParameters(newParams, keepParams)
-    console.log({finallyParamters})
+
     const convertedArrayValues = appendArrayValues(finallyParamters, newParams)
 
     const paramsSorted = sortParameters(convertedArrayValues)
-    console.log({paramsSorted})
-
 
     setSearchParams(transformParamsToURLSearch(paramsSorted))
 
   }
+
+    // Función para suscribirse a cambios en un parámetro
+    const onChange = useCallback( (paramName: keys, callbacks: Array<() => void>) => {
+      const paramNameStr = String(paramName)
+      // se reemplazan los callbacks anteriores por los nuevos para no acumular callbacks
+      subscriptionsRef.current[paramNameStr] = callbacks;
+    }, [])
+  
+    // Cada vez que searchParams cambie, notificamos a los suscriptores
+    useEffect(() => {
+
+      for (const [key, value] of Object.entries(subscriptionsRef.current)) {
+
+        const newValue = CURRENT_PARAMS_URL[key] ?? null 
+        const oldValue = previousParamsRef.current[key] ?? null
+        if (newValue !== oldValue) {
+          
+          // se ejecutan los callbacks de los suscriptores
+          for (const callback of value) {
+            console.log(value)
+
+            callback()
+
+          }
+        }
+        // Actualizar el valor anterior para esta clave
+        previousParamsRef.current[key] = newValue
+      }
+
+      
+    }, [CURRENT_PARAMS_URL])
+
+
   return {
     searchParams,
     updateParams,
     clearParams,
-    getParams
+    getParams,
+    getParam,
+    onChange
   }
 }

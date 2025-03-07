@@ -1,6 +1,8 @@
 import React from 'react'
 
 export const LightSvg: React.FC<React.SVGProps<SVGSVGElement>> = (props) => {
+
+
   return (
     <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -8,7 +10,11 @@ export const LightSvg: React.FC<React.SVGProps<SVGSVGElement>> = (props) => {
     xmlSpace="preserve"
     width={props.width ?? "24"}
     height={props.height ?? "24"}
+    className={'transition-colors duration-1000  ' + props.className}
     fill={props.fill ?? "currentColor"}
+    // strokeWidth={8}
+
+
     {...props}
   >
     <path d="M118.473 46.308V14.833a7.5 7.5 0 0 0-7.5-7.5H70.357a7.5 7.5 0 0 0-7.5 7.5v31.474C51.621 54.767 44.34 68.214 44.34 83.331c0 25.543 20.781 46.324 46.324 46.324s46.324-20.781 46.324-46.324c0-15.116-7.28-28.562-18.515-37.023M77.857 22.333h25.615v16.489a46.2 46.2 0 0 0-12.809-1.815c-4.443 0-8.736.642-12.807 1.814V22.333zm12.807 92.322c-17.273 0-31.324-14.052-31.324-31.324s14.052-31.324 31.324-31.324 31.324 14.052 31.324 31.324-14.051 31.324-31.324 31.324M40.595 83.331a7.5 7.5 0 0 0-7.5-7.5H7.5a7.5 7.5 0 0 0 0 15h25.595a7.5 7.5 0 0 0 7.5-7.5m133.233-7.5h-25.595a7.5 7.5 0 0 0 0 15h25.595a7.5 7.5 0 0 0 0-15" />
